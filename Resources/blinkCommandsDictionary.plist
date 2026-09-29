@@ -93,6 +93,13 @@
 		<string></string>
 		<string>no</string>
 	</array>
+	<key>tmux</key>
+	<array>
+		<string>MAIN</string>
+		<string>tmux_main</string>
+		<string></string>
+		<string>no</string>
+	</array>
 	<key>whatsnew</key>
 	<array>
 		<string>MAIN</string>
