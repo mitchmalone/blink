@@ -59,16 +59,27 @@ class SSHClientConfigProvider {
   }
   
   // Return HostName, SSHClientConfig for the server
-  static func config(host: BKSSHHost, using device: TermDevice) throws -> SSHClientConfig {
+  // Non-interactive configs never prompt: only agent keys and a saved host password are tried,
+  // and an unknown or changed host key is rejected instead of asked about.
+  static func config(host: BKSSHHost, using device: TermDevice, interactive: Bool = true) throws -> SSHClientConfig {
     let prov = try SSHClientConfigProvider(using: device)
-    
+
     let agent = prov.agent(for: host)
 
-    let availableAuthMethods: [AuthMethod] = [AuthAgent(agent)] + prov.passwordAuthMethods(for: host)
+    let availableAuthMethods: [AuthMethod] = [AuthAgent(agent)] + prov.passwordAuthMethods(for: host, interactive: interactive)
+
+    let verifyHostCallback: SSHClientConfig.RequestVerifyHostCallback?
+    if !(host.strictHostKeyChecking ?? true) {
+      verifyHostCallback = nil
+    } else if interactive {
+      verifyHostCallback = prov.cliVerifyHostCallback
+    } else {
+      verifyHostCallback = { _ in .just(.negative) }
+    }
 
     return
       host.sshClientConfig(authMethods: availableAuthMethods,
-                           verifyHostCallback: (host.strictHostKeyChecking ?? true) ? prov.cliVerifyHostCallback : nil,
+                           verifyHostCallback: verifyHostCallback,
                            agent: agent,
                            logger: prov.logger)
   }
@@ -96,12 +107,16 @@ extension SSHClientConfigProvider {
     return authMethods
   }
   
-  fileprivate func passwordAuthMethods(for host: BKSSHHost) -> [AuthMethod] {
+  fileprivate func passwordAuthMethods(for host: BKSSHHost, interactive: Bool = true) -> [AuthMethod] {
     var authMethods: [AuthMethod] = []
 
     // Host password
     if let password = host.password, !password.isEmpty {
       authMethods.append(AuthPassword(with: password))
+    }
+
+    if !interactive {
+      return authMethods
     }
 
     authMethods.append(AuthKeyboardInteractive(requestAnswers: self.authPrompt, wrongRetriesAllowed: 2))

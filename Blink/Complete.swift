@@ -177,6 +177,7 @@ struct Complete {
       "tee": "Pipe fitting.", // fish
       "telnet": "User interface to the TELNET protocol.", // fish
       "theme": "Choose a theme 💅",
+      "tmux": "Pick a tmux session on your hosts and attach over mosh.",
       "touch": "Change file access and modification times.", // fish
 //      "tr": "", // TODO
       "uname": "Print operating system name.", // fish
