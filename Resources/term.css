@@ -342,3 +342,14 @@ span.emoji {
   font-size: calc(1em * var(--blink-emoji-scale, 1));
   vertical-align: top;
 }
+
+/* The padding takes the colour of the grid's edge cells (see _blinkPadding in
+   term.js), which row-nodes carries so the strip right of the grid and below the
+   last row match it. Cells with the default background are transparent, so paint
+   the theme colour behind each row, but only across the grid, keeping them as
+   they were. Both properties are unset until term.js sets them. */
+x-screen x-row {
+  background-image: linear-gradient(var(--blink-default-bg, transparent), var(--blink-default-bg, transparent));
+  background-repeat: no-repeat;
+  background-size: var(--blink-grid-width, 100%) 100%;
+}

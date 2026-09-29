@@ -61,6 +61,118 @@ function _colorComponents(colorStr) {
     .map(s => parseInt(s));
 }
 
+// The padding around the grid is painted with the theme background, but an
+// application can paint every cell in another colour, for example tmux's
+// window-style, or change the default with OSC 11. The padding then frames the
+// grid in the wrong colour. Instead, extend the colour of the cells along the
+// grid's left and right edges into the padding, the way Ghostty's
+// window-padding-color = extend does.
+var _blinkPadding = {
+  color: null,
+  timer: null,
+
+  install: function(term) {
+    var screen = term.scrollPort_.screen_;
+    var observer = new MutationObserver(() => this.schedule(term));
+    observer.observe(screen, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['style'],
+    });
+    this.schedule(term);
+  },
+
+  // Output arrives in bursts; sample once it settles.
+  schedule: function(term) {
+    if (this.timer) {
+      return;
+    }
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      this.sync(term);
+    }, 100);
+  },
+
+  sync: function(term) {
+    var color = this.edgeColor(term);
+    this.paint(term, color);
+    if (color === this.color) {
+      return;
+    }
+    this.color = color;
+    _postMessage('bgColor', {bgColor: _colorComponents(color)});
+  },
+
+  // For native callers that need the colour now, such as after a theme change.
+  current: function(term) {
+    this.color = this.edgeColor(term);
+    this.paint(term, this.color);
+    return _colorComponents(this.color);
+  },
+
+  // Paints the padding inside the page: the strip right of the grid and below
+  // the last row, which row-nodes fills and would otherwise inherit the theme
+  // colour from x-screen. Rows keep the theme colour across the grid itself, so
+  // cells with the default background are unchanged. See x-row in term.css.
+  paint: function(term, color) {
+    var root = document.documentElement.style;
+    root.setProperty('--blink-default-bg', term.getBackgroundColor());
+    root.setProperty('--blink-grid-width',
+      (term.screenSize.width * term.scrollPort_.characterSize.width) + 'px');
+    document.body.style.backgroundColor = color;
+    var rowNodes = document.getElementById('hterm:row-nodes');
+    if (rowNodes) {
+      rowNodes.style.backgroundColor = color;
+    }
+  },
+
+  // The colour most common along both edges of the visible rows. A short row's
+  // right edge is unpainted, so it counts as the default background. Rows are
+  // hterm's model, {nodes: [{txt, attrs}]}, where attrs.bcs is the resolved
+  // background of a styled run.
+  edgeColor: function(term) {
+    var fallback = term.getBackgroundColor();
+    var rows = term.screen_.rowsArray;
+    var width = term.screenSize.width;
+    var counts = {};
+    var best = fallback;
+    var bestCount = 0;
+
+    var vote = (color) => {
+      color = color || fallback;
+      counts[color] = (counts[color] || 0) + 1;
+      if (counts[color] > bestCount) {
+        best = color;
+        bestCount = counts[color];
+      }
+    };
+
+    for (var i = 0; i < rows.length; i++) {
+      var nodes = rows[i].nodes || [];
+      if (!nodes.length) {
+        vote(null);
+        vote(null);
+        continue;
+      }
+      vote(this.nodeColor(nodes[0]));
+      var used = nodes.reduce((sum, n) => sum + lib.wc.strWidth(n.txt || ''), 0);
+      vote(used >= width ? this.nodeColor(nodes[nodes.length - 1]) : null);
+    }
+
+    return best;
+  },
+
+  nodeColor: function(node) {
+    var attrs = node && node.attrs;
+    if (!attrs || attrs.isDefault || !attrs.bcs) {
+      return null;
+    }
+    return attrs.bcs;
+  },
+};
+
 // Before we fully load hterm. We set options here.
 var _prefs = new hterm.PreferenceManager('blink');
 var t = {prefs_: _prefs}; // <- `t` will become actual hterm instance after decorate.
@@ -136,6 +248,7 @@ function term_setup(accessibilityEnabled) {
     t.uninstallKeyboard();
     
     _postMessage('terminalReady', {size, bgColor});
+    _blinkPadding.install(t);
 
     if (window.KeystrokeVisualizer) {
       window.KeystrokeVisualizer.enable();
