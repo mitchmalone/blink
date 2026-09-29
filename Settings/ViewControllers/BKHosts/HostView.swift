@@ -474,18 +474,18 @@ struct HostView: View {
 
 
   init(host: BKHosts?, iCloudVersion: Bool = false, reloadList: @escaping () -> ()) {
-    _host = host
     _iCloudVersion = iCloudVersion
-    _conflictedICloudHost = host?.iCloudConflictCopy
     _reloadList = reloadList
+    _host = host
+    _conflictedICloudHost = host?.iCloudConflictCopy
   }
 
   init(duplicatingHost host: BKHosts, reloadList: @escaping () -> ()) {
-    _host = nil
     _duplicatedHost = host
     _iCloudVersion = false
-    _conflictedICloudHost = nil
     _reloadList = reloadList
+    _host = nil
+    _conflictedICloudHost = nil
   }
 
   private func _usageHint() -> String {
