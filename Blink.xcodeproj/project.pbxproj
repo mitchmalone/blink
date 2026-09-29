@@ -4216,7 +4216,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = BlinkFileProviderExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Blink;
+				INFOPLIST_KEY_CFBundleDisplayName = Blinkmux;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4258,7 +4258,7 @@
 				CURRENT_PROJECT_VERSION = 1073;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = BlinkFileProviderExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Blink;
+				INFOPLIST_KEY_CFBundleDisplayName = Blinkmux;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -4491,7 +4491,7 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BlinkFileProviderExtensionUI/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Blink;
+				INFOPLIST_KEY_CFBundleDisplayName = Blinkmux;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 Carlos Cabañero Projects SL. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -4533,7 +4533,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BlinkFileProviderExtensionUI/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Blink;
+				INFOPLIST_KEY_CFBundleDisplayName = Blinkmux;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2021 Carlos Cabañero Projects SL. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
