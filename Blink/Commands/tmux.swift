@@ -134,7 +134,10 @@ struct TmuxCommand: NonStdIOCommand {
           print("  (no mosh-server, ssh fallback)")
         }
         for s in sessions {
-          print("  \(s.name)  \(s.windows) window\(s.windows == 1 ? "" : "s")\(s.attached > 0 ? "  (attached)" : "")")
+          print("  \(s.agentState?.icon ?? " ") \(s.name)  \(s.windows) window\(s.windows == 1 ? "" : "s")\(s.attached > 0 ? "  (attached)" : "")")
+          for agent in s.agents {
+            print("      \(agent.state.icon) \(agent.index): \(agent.name)")
+          }
         }
       }
     }
@@ -185,12 +188,49 @@ struct TmuxTarget: Equatable {
   }
 }
 
+// Agent state as published by the claude-tmux-status plugin in each window's
+// @claude-tmux-status-state option.
+enum TmuxAgentState: String, Comparable {
+  case idle
+  case processing
+  case attention
+
+  var icon: String {
+    switch self {
+    case .idle: return "😴"
+    case .processing: return "🧑‍🍳"
+    case .attention: return "👀"
+    }
+  }
+
+  // attention outranks processing, which outranks idle.
+  private var rank: Int {
+    switch self {
+    case .idle: return 0
+    case .processing: return 1
+    case .attention: return 2
+    }
+  }
+
+  static func < (a: Self, b: Self) -> Bool { a.rank < b.rank }
+}
+
+struct TmuxAgentWindow: Hashable {
+  let index: Int
+  let name: String
+  let state: TmuxAgentState
+}
+
 struct TmuxSession: Identifiable, Hashable {
   var id: String { name }
   let name: String
   let windows: Int
   let attached: Int
   let lastActivity: Date?
+  var agents: [TmuxAgentWindow] = []
+
+  // The state that most needs a look, across the session's agent windows.
+  var agentState: TmuxAgentState? { agents.map(\.state).max() }
 }
 
 enum TmuxHostStatus {
@@ -216,6 +256,7 @@ enum TmuxShell {
   static let listMarker = "__BLINK_TMUX__"
   static let statusMarker = "__BLINK_TMUX_RC__"
   static let moshMarker = "__BLINK_MOSH__"
+  static let windowsMarker = "__BLINK_TMUX_WINDOWS__"
 
   static func quote(_ s: String) -> String {
     "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'"
@@ -230,8 +271,11 @@ enum TmuxShell {
   static var listCommand: String {
     let mosh = "if test -x ~/.local/blink/mosh-server || command -v mosh-server >/dev/null 2>&1; " +
       "then echo \(moshMarker)1; else echo \(moshMarker)0; fi"
-    let format = "#{session_windows}|#{session_attached}|#{session_activity}|#{session_name}"
-    let script = "echo \(listMarker); tmux list-sessions -F \(quote(format)) 2>&1; echo \(statusMarker)$?"
+    // Names can contain |, so they come last, and windows join to sessions by id.
+    let format = "#{session_windows}|#{session_attached}|#{session_activity}|#{session_id}|#{session_name}"
+    let windows = "#{session_id}|#{window_index}|#{@claude-tmux-status-state}|#{window_name}"
+    let script = "echo \(listMarker); tmux list-sessions -F \(quote(format)) 2>&1; echo \(statusMarker)$?; " +
+      "echo \(windowsMarker); tmux list-windows -a -F \(quote(windows)) 2>/dev/null"
     return "sh -c \(quote("\(mosh); exec ${SHELL:-sh} -lc \(quote(script))"))"
   }
 
@@ -257,7 +301,13 @@ enum TmuxShell {
     let mosh = lines.first(where: { $0.hasPrefix(moshMarker) }).map { $0.hasSuffix("1") } ?? true
 
     if status == 0 {
-      return .sessions(body.compactMap(parseSession), mosh: mosh)
+      let agents = parseAgents(lines[(end + 1)...])
+      let sessions = body.compactMap(parseSession).map { parsed -> TmuxSession in
+        var session = parsed.session
+        session.agents = agents[parsed.id] ?? []
+        return session
+      }
+      return .sessions(sessions, mosh: mosh)
     }
     if status == 127 {
       return .failed("tmux not found on the host")
@@ -270,16 +320,38 @@ enum TmuxShell {
     return .failed(message.isEmpty ? "tmux exited with \(status)" : message)
   }
 
-  private static func parseSession(_ line: String) -> TmuxSession? {
-    let fields = line.split(separator: "|", maxSplits: 3, omittingEmptySubsequences: false)
-    guard fields.count == 4,
+  private static func parseSession(_ line: String) -> (id: String, session: TmuxSession)? {
+    let fields = line.split(separator: "|", maxSplits: 4, omittingEmptySubsequences: false)
+    guard fields.count == 5,
           let windows = Int(fields[0]),
           let attached = Int(fields[1])
     else {
       return nil
     }
     let activity = TimeInterval(fields[2]).map { Date(timeIntervalSince1970: $0) }
-    return TmuxSession(name: String(fields[3]), windows: windows, attached: attached, lastActivity: activity)
+    let session = TmuxSession(name: String(fields[4]), windows: windows, attached: attached, lastActivity: activity)
+    return (String(fields[3]), session)
+  }
+
+  // Windows with an agent state, grouped by session id.
+  private static func parseAgents(_ lines: ArraySlice<String>) -> [String: [TmuxAgentWindow]] {
+    guard let start = lines.firstIndex(of: windowsMarker) else {
+      return [:]
+    }
+    var agents: [String: [TmuxAgentWindow]] = [:]
+    for line in lines[(start + 1)...] {
+      let fields = line.split(separator: "|", maxSplits: 3, omittingEmptySubsequences: false)
+      guard fields.count == 4,
+            let index = Int(fields[1]),
+            let state = TmuxAgentState(rawValue: String(fields[2]))
+      else {
+        continue
+      }
+      // The plugin appends " [icon]" to the window name; show the title alone.
+      let name = String(fields[3]).replacingOccurrences(of: #" \[[^\[\]]*\]$"#, with: "", options: .regularExpression)
+      agents[String(fields[0]), default: []].append(TmuxAgentWindow(index: index, name: name, state: state))
+    }
+    return agents
   }
 }
 

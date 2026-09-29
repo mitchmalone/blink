@@ -287,17 +287,28 @@ struct TmuxPickerView: View {
     let button = Button {
       onFinish(TmuxTarget(host: host, session: session.name, transport: transport))
     } label: {
-      HStack {
+      HStack(alignment: .top) {
         VStack(alignment: .leading, spacing: 2) {
           Text(session.name).font(.body.weight(.semibold)).foregroundColor(.primary)
           Text(detail(session)).font(.caption).foregroundColor(.secondary)
+          // One line per window running an agent, from claude-tmux-status.
+          ForEach(session.agents, id: \.self) { agent in
+            Text("\(agent.state.icon) \(agent.index): \(agent.name)")
+              .font(.caption)
+              .foregroundColor(agent.state == .attention ? .orange : .secondary)
+              .lineLimit(1)
+          }
         }
         Spacer()
+        if let state = session.agentState {
+          Text(state.icon).font(.title3)
+        }
         if let number = number {
           Text("⌘\(number)").font(.caption.monospaced()).foregroundColor(.secondary)
         }
       }
     }
+    .listRowBackground(session.agentState == .attention ? Color.orange.opacity(0.15) : nil)
 
     let tappable: AnyView
     if let number = number {
