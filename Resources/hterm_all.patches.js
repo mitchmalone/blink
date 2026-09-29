@@ -196,11 +196,18 @@ var _blinkEmojiScale = {
       return;
     }
 
-    var font = getComputedStyle(screen).font;
-    if (!font || this.font === font) {
+    var style = getComputedStyle(screen);
+    var font = style.font;
+    // Colour emoji are about as tall as they are wide, and taller than a text
+    // row, so a glyph fitted to two cells across still loses its top to the
+    // box's overflow: hidden (the zzz on U+1F634). Fit the row height too. hterm
+    // sets the row height after measuring the font, so key the cache on both.
+    var rowHeight = parseFloat(style.getPropertyValue('--hterm-charsize-height'));
+    var key = font + '|' + rowHeight;
+    if (!font || this.font === key) {
       return;
     }
-    this.font = font;
+    this.font = key;
 
     if (!this.el) {
       this.el = document.createElement('span');
@@ -223,6 +230,9 @@ var _blinkEmojiScale = {
 
     // Only correct an overflow; never enlarge a glyph that already fits.
     var scale = Math.min(1, (cell * 2) / emoji);
+    if (rowHeight) {
+      scale = Math.min(scale, rowHeight / emoji);
+    }
     document.documentElement.style.setProperty(
       '--blink-emoji-scale', String(Math.round(scale * 1000) / 1000));
   },
