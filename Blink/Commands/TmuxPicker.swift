@@ -120,11 +120,20 @@ class TmuxPickerModel: ObservableObject {
     }
   }
 
+  // mosh unless discovery found no mosh-server on the host.
+  func transport(for host: String) -> TmuxTransport {
+    if let h = hosts.first(where: { $0.name == host }),
+       case .sessions(_, let mosh) = h.status, !mosh {
+      return .ssh
+    }
+    return .mosh
+  }
+
   // Shortcut numbers run across hosts in display order, so ⌘1 is always the first session shown.
   func shortcutNumber(host: String, session: String) -> Int? {
     var n = 0
     for h in hosts {
-      guard case .sessions(let sessions) = h.status else { continue }
+      guard case .sessions(let sessions, _) = h.status else { continue }
       for s in sessions {
         n += 1
         if h.name == host && s.name == session {
@@ -192,7 +201,7 @@ struct TmuxPickerView: View {
         Button("Create") {
           let name = newSessionName.trimmingCharacters(in: .whitespaces)
           if let host = newSessionHost, !name.isEmpty {
-            onFinish(TmuxTarget(host: host, session: name))
+            onFinish(TmuxTarget(host: host, session: name, transport: model.transport(for: host)))
           }
           newSessionHost = nil
         }
@@ -204,7 +213,7 @@ struct TmuxPickerView: View {
   private var sessionList: some View {
     List {
       ForEach(model.hosts) { host in
-        Section(header: Text(host.name)) {
+        Section(header: hostHeader(host)) {
           hostRows(host)
           Button {
             newSessionName = ""
@@ -251,20 +260,32 @@ struct TmuxPickerView: View {
     case .failed(let message):
       Label(message, systemImage: "exclamationmark.triangle")
         .foregroundColor(.secondary)
-    case .sessions(let sessions) where sessions.isEmpty:
+    case .sessions(let sessions, _) where sessions.isEmpty:
       Text("No sessions").foregroundColor(.secondary)
-    case .sessions(let sessions):
+    case .sessions(let sessions, _):
       ForEach(sessions) { session in
         sessionRow(host: host.name, session: session)
       }
     }
   }
 
-  @ViewBuilder
+  // The host name, with the connection a tap will use once discovery knows it.
+  private func hostHeader(_ host: TmuxPickerModel.Host) -> some View {
+    HStack {
+      Text(host.name)
+      Spacer()
+      if case .sessions(_, let mosh) = host.status {
+        Text(mosh ? "mosh" : "ssh · no mosh-server")
+          .font(.caption2.monospaced())
+      }
+    }
+  }
+
   private func sessionRow(host: String, session: TmuxSession) -> some View {
     let number = model.shortcutNumber(host: host, session: session.name)
+    let transport = model.transport(for: host)
     let button = Button {
-      onFinish(TmuxTarget(host: host, session: session.name))
+      onFinish(TmuxTarget(host: host, session: session.name, transport: transport))
     } label: {
       HStack {
         VStack(alignment: .leading, spacing: 2) {
@@ -278,10 +299,25 @@ struct TmuxPickerView: View {
       }
     }
 
+    let tappable: AnyView
     if let number = number {
-      button.keyboardShortcut(KeyEquivalent(Character(String(number))), modifiers: .command)
+      tappable = AnyView(button.keyboardShortcut(KeyEquivalent(Character(String(number))), modifiers: .command))
     } else {
-      button
+      tappable = AnyView(button)
+    }
+
+    // Long press to pick the connection, for when mosh can't get through (UDP blocked).
+    return tappable.contextMenu {
+      Button {
+        onFinish(TmuxTarget(host: host, session: session.name, transport: .mosh))
+      } label: {
+        Label("Connect with mosh", systemImage: "antenna.radiowaves.left.and.right")
+      }
+      Button {
+        onFinish(TmuxTarget(host: host, session: session.name, transport: .ssh))
+      } label: {
+        Label("Connect with SSH", systemImage: "terminal")
+      }
     }
   }
 

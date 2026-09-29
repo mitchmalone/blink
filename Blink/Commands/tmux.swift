@@ -44,7 +44,8 @@ struct TmuxCommand: NonStdIOCommand {
     abstract: "Pick a tmux session on your hosts and attach to it over mosh",
     discussion: """
     tmux                 Open the session picker. Add hosts from its Hosts button.
-    tmux beebee/main     Attach directly, creating the session if needed.
+    tmux beebee/main     Attach directly over mosh, creating the session if needed.
+    tmux beebee/main --ssh   The same over ssh, for when mosh can't get through.
     tmux --list          Print the sessions on your tmux hosts.
     """
   )
@@ -54,6 +55,9 @@ struct TmuxCommand: NonStdIOCommand {
 
   @Flag(name: .shortAndLong, help: "Print the sessions instead of opening the picker.")
   var list: Bool = false
+
+  @Flag(help: "Attach with ssh instead of mosh.")
+  var ssh: Bool = false
 
   @Argument(help: "host/session to attach to directly.")
   var target: String?
@@ -68,7 +72,8 @@ struct TmuxCommand: NonStdIOCommand {
     let session = Unmanaged<MCPSession>.fromOpaque(thread_context).takeUnretainedValue()
 
     if let target = target.flatMap(TmuxTarget.init(parsing:)) {
-      try TmuxAttach.enqueue(target, on: session)
+      let transport: TmuxTransport = ssh ? .ssh : .mosh
+      try TmuxAttach.enqueue(TmuxTarget(host: target.host, session: target.session, transport: transport), on: session)
       return
     }
 
@@ -119,9 +124,12 @@ struct TmuxCommand: NonStdIOCommand {
         print("  (no answer)")
       case .failed(let message):
         print("  error: \(message)")
-      case .sessions(let sessions) where sessions.isEmpty:
-        print("  no sessions")
-      case .sessions(let sessions):
+      case .sessions(let sessions, let mosh) where sessions.isEmpty:
+        print("  no sessions\(mosh ? "" : " (no mosh-server, ssh fallback)")")
+      case .sessions(let sessions, let mosh):
+        if !mosh {
+          print("  (no mosh-server, ssh fallback)")
+        }
         for s in sessions {
           print("  \(s.name)  \(s.windows) window\(s.windows == 1 ? "" : "s")\(s.attached > 0 ? "  (attached)" : "")")
         }
@@ -146,13 +154,22 @@ public func tmux_main(argc: Int32, argv: Argv) -> Int32 {
 
 // MARK: - Model
 
+// mosh is preferred: it roams and survives sleep. ssh is the fallback for hosts
+// without mosh-server, or when UDP is blocked.
+enum TmuxTransport {
+  case mosh
+  case ssh
+}
+
 struct TmuxTarget: Equatable {
   let host: String
   let session: String
+  let transport: TmuxTransport
 
-  init(host: String, session: String) {
+  init(host: String, session: String, transport: TmuxTransport = .mosh) {
     self.host = host
     self.session = session
+    self.transport = transport
   }
 
   // host/session
@@ -175,7 +192,8 @@ struct TmuxSession: Identifiable, Hashable {
 
 enum TmuxHostStatus {
   case loading
-  case sessions([TmuxSession])
+  // mosh: whether the host has a mosh-server Blink can start.
+  case sessions([TmuxSession], mosh: Bool)
   case failed(String)
 }
 
@@ -194,6 +212,7 @@ enum TmuxHosts {
 enum TmuxShell {
   static let listMarker = "__BLINK_TMUX__"
   static let statusMarker = "__BLINK_TMUX_RC__"
+  static let moshMarker = "__BLINK_MOSH__"
 
   static func quote(_ s: String) -> String {
     "'" + s.replacingOccurrences(of: "'", with: "'\\''") + "'"
@@ -201,14 +220,21 @@ enum TmuxShell {
 
   // Run through a login shell so tmux installed outside the default PATH
   // (Homebrew on macOS) is found. Markers fence the output from shell profile noise.
+  //
+  // The mosh-server check runs first, outside the login shell, because that is
+  // where Blink's mosh looks: ~/.local/blink/mosh-server, then the plain PATH.
+  // Everything is wrapped in sh -c so it parses whatever the login shell is.
   static var listCommand: String {
+    let mosh = "if test -x ~/.local/blink/mosh-server || command -v mosh-server >/dev/null 2>&1; " +
+      "then echo \(moshMarker)1; else echo \(moshMarker)0; fi"
     let format = "#{session_windows}|#{session_attached}|#{session_activity}|#{session_name}"
     let script = "echo \(listMarker); tmux list-sessions -F \(quote(format)) 2>&1; echo \(statusMarker)$?"
-    return "${SHELL:-sh} -lc \(quote(script))"
+    return "sh -c \(quote("\(mosh); exec ${SHELL:-sh} -lc \(quote(script))"))"
   }
 
+  // No double quotes: the whole command travels as one double-quoted argument.
   static func attachCommand(session: String) -> String {
-    "${SHELL:-sh} -lc \(quote("exec tmux new -A -s \(quote(session))"))"
+    "sh -c \(quote("exec ${SHELL:-sh} -lc \(quote("exec tmux new -A -s \(quote(session))"))"))"
   }
 
   static func parse(_ output: String) -> TmuxHostStatus {
@@ -224,9 +250,11 @@ enum TmuxShell {
     }
 
     let body = lines[(start + 1)..<end].filter { !$0.isEmpty }
+    // Assume mosh when the check is missing, which keeps today's behaviour.
+    let mosh = lines.first(where: { $0.hasPrefix(moshMarker) }).map { $0.hasSuffix("1") } ?? true
 
     if status == 0 {
-      return .sessions(body.compactMap(parseSession))
+      return .sessions(body.compactMap(parseSession), mosh: mosh)
     }
     if status == 127 {
       return .failed("tmux not found on the host")
@@ -234,7 +262,7 @@ enum TmuxShell {
     let message = body.joined(separator: " ")
     // No server (or no socket yet) just means no sessions.
     if message.contains("no server running") || message.contains("error connecting to") {
-      return .sessions([])
+      return .sessions([], mosh: mosh)
     }
     return .failed(message.isEmpty ? "tmux exited with \(status)" : message)
   }
@@ -340,15 +368,21 @@ enum TmuxDiscovery {
 // MARK: - Attach
 
 enum TmuxAttach {
-  // Hands off to Blink's own mosh command once this command returns, so the
-  // connection is saved and restored like any other mosh session.
+  // Hands off to Blink's own mosh or ssh command once this command returns, so
+  // the connection is saved and restored like any other session.
   static func enqueue(_ target: TmuxTarget, on session: MCPSession) throws {
     // The remote command travels as one double-quoted argument.
     guard !target.host.contains("\""), !target.host.contains(" "), !target.session.contains("\"") else {
       throw CommandError(message: "Host and session names can't contain double quotes or (for hosts) spaces.")
     }
     let remote = TmuxShell.attachCommand(session: target.session)
-    let cmd = "mosh \(target.host) -- \"\(remote)\""
+    let cmd: String
+    switch target.transport {
+    case .mosh:
+      cmd = "mosh \(target.host) -- \"\(remote)\""
+    case .ssh:
+      cmd = "ssh -t \(target.host) -- \"\(remote)\""
+    }
     session.cmdQueue.async {
       session.enqueueCommand(cmd, skipHistoryRecord: true)
     }
