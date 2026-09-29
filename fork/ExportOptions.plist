@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>destination</key>
+	<string>export</string>
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.mitchmalone.blinkshell</key>
+		<string>56580291-6241-424d-ad73-34f2b4789064</string>
+		<key>com.mitchmalone.blinkshell.BlinkFileProviderExtension</key>
+		<string>72c82198-04e4-427d-b010-c8c15eeaf593</string>
+		<key>com.mitchmalone.blinkshell.BlinkFileProviderExtensionUI</key>
+		<string>3fa67cc6-b9a2-4e0d-9a93-44f6a97b2402</string>
+	</dict>
+	<key>signingCertificate</key>
+	<string>D1CF42225AF9FE8B2D9FB9AC2BE54FEEE999D92E</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>teamID</key>
+	<string>HXRC74AQZR</string>
+	<key>uploadSymbols</key>
+	<true/>
+</dict>
+</plist>
