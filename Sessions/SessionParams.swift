@@ -130,7 +130,12 @@ public extension EncodedStateBacked {
   /// Consumed once inside `MCPSession.executeWithArgs:`.
   @objc var initialCommand: String? = nil
 
-  private enum Key: CodingKey { case childSessionType, childSessionParams }
+  /// Command to run when a mosh or ssh session it started ends by itself, rather
+  /// than being suspended. Encoded, so it survives the app being killed while
+  /// the child is restored. `tmux` uses it to return to its picker on detach.
+  @objc var returnCommand: String? = nil
+
+  private enum Key: CodingKey { case childSessionType, childSessionParams, returnCommand }
 
   override init() { super.init() }
 
@@ -140,6 +145,7 @@ public extension EncodedStateBacked {
   func encode(with coder: NSCoder) {
     coder.bk_encode(childSessionType, for: Key.childSessionType)
     coder.bk_encode(childSessionParams, for: Key.childSessionParams)
+    coder.bk_encode(returnCommand, for: Key.returnCommand)
   }
 
   required init?(coder: NSCoder) {
@@ -147,6 +153,7 @@ public extension EncodedStateBacked {
     self.childSessionType = coder.bk_decode(for: Key.childSessionType)
     // NOTE: include all known MCP children subclasses here for secure decoding
     self.childSessionParams = coder.bk_decode(of: [MoshParams.self], for: Key.childSessionParams)
+    self.returnCommand = coder.bk_decode(for: Key.returnCommand)
   }
 
   // MARK: - BKSessionParamsSnapshotting (forward)

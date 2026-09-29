@@ -363,6 +363,8 @@
 		D266A9DA27295ECE00C85EED /* blink-uio.min.js in Resources */ = {isa = PBXBuildFile; fileRef = D266A9D627295ECE00C85EED /* blink-uio.min.js */; };
 		D266A9DC272A77A100C85EED /* code.swift in Sources */ = {isa = PBXBuildFile; fileRef = D266A9DB272A77A100C85EED /* code.swift */; };
 		D26A37F026A0AB7000534A4D /* facecam.swift in Sources */ = {isa = PBXBuildFile; fileRef = D26A37EF26A0AB7000534A4D /* facecam.swift */; };
+		D0F0721FC8D8D689C8F1E1DC /* tmux.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FF4FC1A1B719026F75C4C84 /* tmux.swift */; };
+		7EECE526FF4676D48DA8637C /* TmuxPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12AE75673B94619000B7A0A5 /* TmuxPicker.swift */; };
 		D275492D26A033CC0039CC95 /* FaceCam.swift in Sources */ = {isa = PBXBuildFile; fileRef = D275492C26A033CC0039CC95 /* FaceCam.swift */; };
 		D276AB0D28D1D36200950728 /* NewSecurityKeyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D276AB0C28D1D36200950728 /* NewSecurityKeyView.swift */; };
 		D277150D287F0C2200D31F4E /* build.m in Sources */ = {isa = PBXBuildFile; fileRef = D277150A287F0C2100D31F4E /* build.m */; };
@@ -1118,6 +1120,8 @@
 		D266A9D627295ECE00C85EED /* blink-uio.min.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "blink-uio.min.js"; sourceTree = "<group>"; };
 		D266A9DB272A77A100C85EED /* code.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = code.swift; sourceTree = "<group>"; };
 		D26A37EF26A0AB7000534A4D /* facecam.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = facecam.swift; sourceTree = "<group>"; };
+		2FF4FC1A1B719026F75C4C84 /* tmux.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = tmux.swift; sourceTree = "<group>"; };
+		12AE75673B94619000B7A0A5 /* TmuxPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TmuxPicker.swift; sourceTree = "<group>"; };
 		D275492C26A033CC0039CC95 /* FaceCam.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceCam.swift; sourceTree = "<group>"; };
 		D276AB0C28D1D36200950728 /* NewSecurityKeyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewSecurityKeyView.swift; sourceTree = "<group>"; };
 		D277150A287F0C2100D31F4E /* build.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = build.m; sourceTree = "<group>"; };
@@ -2401,6 +2405,8 @@
 				D2F330D120A6EF020074ADD7 /* showkey.m */,
 				D2FBEC0727CF505D00FD974A /* browse.swift */,
 				D26A37EF26A0AB7000534A4D /* facecam.swift */,
+				2FF4FC1A1B719026F75C4C84 /* tmux.swift */,
+				12AE75673B94619000B7A0A5 /* TmuxPicker.swift */,
 				D266A9DB272A77A100C85EED /* code.swift */,
 				BD8152532743FF84002BB169 /* skstore.swift */,
 			);
@@ -3582,6 +3588,8 @@
 				C9B2E0311D6B612400B89F69 /* BLKDefaults.m in Sources */,
 				D20394AA29E6B30400FB337F /* Receipt.swift in Sources */,
 				D26A37F026A0AB7000534A4D /* facecam.swift in Sources */,
+				D0F0721FC8D8D689C8F1E1DC /* tmux.swift in Sources */,
+				7EECE526FF4676D48DA8637C /* TmuxPicker.swift in Sources */,
 				D21DEE41260C9A3D00D8E640 /* ImportKeyView.swift in Sources */,
 				D242157822E878950037E5A6 /* UIColor+Codable.swift in Sources */,
 				07FAB8F125C8E6C500E1CC2C /* CopyFiles.swift in Sources */,

@@ -101,6 +101,9 @@
       if (self.sessionParams.hasEncodedState) {
         return;
       }
+      if ([self _enqueueReturnCommand]) {
+        return;
+      }
     }
     if ([@"mosh1" isEqualToString:self.sessionParams.childSessionType] && self.sessionParams.hasEncodedState) {
       MoshSession *mosh = [[MoshSession alloc] initWithDevice:_device andParams:self.sessionParams.childSessionParams];
@@ -191,6 +194,9 @@
     if (self.sessionParams.hasEncodedState) {
       return NO;
     }
+    if ([self _enqueueReturnCommand]) {
+      return NO;
+    }
   } else if ([cmd isEqualToString:@"mosh1"]) {
     [self _runMosh1WithArgs:cmdline];
     if (self.sessionParams.hasEncodedState) {
@@ -236,6 +242,10 @@
     setenv("LC_CTYPE", "UTF-8", 1);
     setlocale(LC_ALL, "UTF-8");
     setlocale(LC_CTYPE, "UTF-8");
+
+    if ([cmd isEqualToString:@"ssh"] && [self _enqueueReturnCommand]) {
+      return NO;
+    }
   }
   
   if (_device) {
@@ -245,6 +255,19 @@
     [_device prompt:@"blink> " secure:NO shell:YES];
   }
   
+  return YES;
+}
+
+// A mosh or ssh session ended by itself (a detach or exit, not a suspend). If
+// whoever started it asked to come back, for example tmux's picker, run that
+// instead of showing the prompt.
+- (BOOL)_enqueueReturnCommand
+{
+  NSString *returnCommand = self.sessionParams.returnCommand;
+  if (returnCommand.length == 0 || !_device) {
+    return NO;
+  }
+  [self enqueueCommand:returnCommand skipHistoryRecord:YES];
   return YES;
 }
 
