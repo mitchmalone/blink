@@ -98,6 +98,9 @@ struct TmuxCommand: NonStdIOCommand {
 
     if let picked = picked {
       try TmuxAttach.enqueue(picked, on: session)
+    } else {
+      // Cancelling the picker means staying at the prompt from now on.
+      session.sessionParams.returnCommand = nil
     }
   }
 
@@ -376,6 +379,10 @@ enum TmuxAttach {
       throw CommandError(message: "Host and session names can't contain double quotes or (for hosts) spaces.")
     }
     let remote = TmuxShell.attachCommand(session: target.session)
+    // Detaching (or exiting) tmux brings the picker back, including after the
+    // app was killed and the mosh session restored. Cancelling it clears this.
+    session.sessionParams.returnCommand = "tmux"
+
     let cmd: String
     switch target.transport {
     case .mosh:
