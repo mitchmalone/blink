@@ -12,7 +12,7 @@
 #      MARKETING_VERSION (default 18.7.0), DEVELOPER_DIR (default release Xcode).
 set -euo pipefail
 
-BRANCHES=(tmux-launcher fix/emoji-width-ios fix/synchronized-output fix/padding-colour)
+BRANCHES=(fix/xcode27-hostview fix/command-error-message tmux-launcher fix/emoji-row-fit fix/synchronized-output fix/padding-colour)
 TEAM_ID=HXRC74AQZR
 : "${ASC_ISSUER_ID:?Set ASC_ISSUER_ID (App Store Connect → Users and Access → Integrations)}"
 ASC_KEY_ID="${ASC_KEY_ID:-JTM5DPS5W7}"
