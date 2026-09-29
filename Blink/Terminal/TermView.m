@@ -443,15 +443,26 @@ struct winsize __winSizeFromJSON(NSDictionary *json) {
 // but could grow into a larger state dict as needed.
 - (void)_syncTerminalState
 {
-  [_webView evaluateJavaScript:@"_colorComponents(t.scrollPort_.screen_.style.backgroundColor)"
+  // The padding colour follows the grid's edge cells, not just the theme.
+  [_webView evaluateJavaScript:@"_blinkPadding.current(t)"
              completionHandler:^(NSArray *bgColor, NSError *error) {
-    if (bgColor && [bgColor count] == 3) {
-      self.backgroundColor = [UIColor colorWithRed:[bgColor[0] floatValue] / 255.0f
-                                             green:[bgColor[1] floatValue] / 255.0f
-                                              blue:[bgColor[2] floatValue] / 255.0f
-                                             alpha:1];
-    }
+    [self _applyBgColor:bgColor];
   }];
+}
+
+// Paints the padding around the grid. bgColor is [r, g, b] from term.js.
+- (BOOL)_applyBgColor:(NSArray *)bgColor
+{
+  if (!bgColor || bgColor.count != 3) {
+    return NO;
+  }
+  UIColor *color = [UIColor colorWithRed:[bgColor[0] floatValue] / 255.0f
+                                   green:[bgColor[1] floatValue] / 255.0f
+                                    blue:[bgColor[2] floatValue] / 255.0f
+                                   alpha:1];
+  self.backgroundColor = color;
+  _gestureInteraction.indicatorStyle = color.isLight ? UIScrollViewIndicatorStyleBlack : UIScrollViewIndicatorStyleWhite;
+  return YES;
 }
 
 - (void)setWidth:(NSInteger)count
@@ -621,6 +632,8 @@ struct winsize __winSizeFromJSON(NSDictionary *json) {
     _termUIState.rows = newWinSize.ws_row;
     _termUIState.cols = newWinSize.ws_col;
     [_device viewWinSizeChanged:newWinSize];
+  } else if ([operation isEqualToString:@"bgColor"]) {
+    [self _applyBgColor:data[@"bgColor"]];
   } else if ([operation isEqualToString:@"terminalReady"]) {
     [self _onTerminalReady:data];
   } else if ([operation isEqualToString:@"fontSizeChanged"]) {
@@ -652,15 +665,7 @@ struct winsize __winSizeFromJSON(NSDictionary *json) {
 - (void)_onTerminalReady:(NSDictionary *)data
 {
   [_webView ready];
-  NSArray *bgColor = data[@"bgColor"];
-  if (bgColor && bgColor.count == 3) {
-    UIColor *color = [UIColor colorWithRed:[bgColor[0] floatValue] / 255.0f
-                                           green:[bgColor[1] floatValue] / 255.0f
-                                            blue:[bgColor[2] floatValue] / 255.0f
-                                           alpha:1];
-    self.backgroundColor = color;
-    _gestureInteraction.indicatorStyle = color.isLight ? UIScrollViewIndicatorStyleBlack : UIScrollViewIndicatorStyleWhite;
-  } else {
+  if (![self _applyBgColor:data[@"bgColor"]]) {
     _gestureInteraction.indicatorStyle = UIScrollViewIndicatorStyleDefault;
   }
   
