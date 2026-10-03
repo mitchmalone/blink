@@ -1,20 +1,20 @@
 #!/bin/bash
 # Builds the fork from fork-build and ships it to TestFlight.
 #
-#   ASC_ISSUER_ID=... fork/testflight.sh
+#   fork/testflight.sh
 #
 # 1. Merges the fork's branches into fork-build (stops on a conflict).
 # 2. Archives with release Xcode, numbering the build YYYYMMDD.HHMM.
 # 3. Checks the archive, exports it with the fork's App Store profiles, uploads.
 # 4. Waits until TestFlight has processed it.
 #
-# Env: ASC_ISSUER_ID (required), ASC_KEY_ID (default JTM5DPS5W7),
+# Env: ASC_ISSUER_ID and ASC_KEY_ID override the fork's App Store Connect IDs,
 #      MARKETING_VERSION (default 18.7.0), DEVELOPER_DIR (default release Xcode).
 set -euo pipefail
 
 BRANCHES=(fix/xcode27-hostview fix/command-error-message tmux-launcher fix/emoji-row-fit fix/synchronized-output fix/padding-colour)
 TEAM_ID=HXRC74AQZR
-: "${ASC_ISSUER_ID:?Set ASC_ISSUER_ID (App Store Connect → Users and Access → Integrations)}"
+ASC_ISSUER_ID="${ASC_ISSUER_ID:-64a1d5c5-ddde-41e6-9f34-9a35c3d643ad}"
 ASC_KEY_ID="${ASC_KEY_ID:-JTM5DPS5W7}"
 MARKETING_VERSION="${MARKETING_VERSION:-18.7.0}"
 export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode.app/Contents/Developer}"

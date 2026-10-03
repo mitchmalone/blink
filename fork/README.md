@@ -26,7 +26,7 @@ To add a branch, list it in `BRANCHES` in `fork/testflight.sh`.
 
 ```
 git checkout fork-build
-ASC_ISSUER_ID=<issuer id> fork/testflight.sh
+fork/testflight.sh
 ```
 
 The script does the following:
@@ -36,6 +36,10 @@ The script does the following:
 4. Exports with the "Blink Fork" App Store profiles, uploads with App Store Connect API key `JTM5DPS5W7`, and waits for TestFlight processing (`fork/asc_wait.rb`).
 
 Output goes to `build/fork/<build>/`, which is gitignored.
+
+The scripts default to the fork's App Store Connect issuer and key IDs. Override
+them with `ASC_ISSUER_ID` and `ASC_KEY_ID` when needed. These are identifiers;
+the private signing key stays outside the repo at the path below.
 
 One-time setup on a new Mac:
 - `git submodule update --init` and `./get_frameworks.sh`.

@@ -1,6 +1,6 @@
 # Waits for an App Store Connect upload to finish processing and reach TestFlight.
 # Usage: ruby fork/asc_wait.rb <delivery-uuid> <build-number>
-# Env: ASC_ISSUER_ID (required), ASC_KEY_ID (default JTM5DPS5W7), BUNDLE_ID.
+# Env: ASC_ISSUER_ID, ASC_KEY_ID and BUNDLE_ID override the fork's defaults.
 require "openssl"
 require "base64"
 require "json"
@@ -9,7 +9,7 @@ require "net/http"
 DELIVERY, VERSION = ARGV
 abort "usage: asc_wait.rb <delivery-uuid> <build-number>" unless DELIVERY && VERSION
 KEY_ID = ENV.fetch("ASC_KEY_ID", "JTM5DPS5W7")
-ISSUER = ENV.fetch("ASC_ISSUER_ID") { abort "ASC_ISSUER_ID is not set" }
+ISSUER = ENV.fetch("ASC_ISSUER_ID", "64a1d5c5-ddde-41e6-9f34-9a35c3d643ad")
 BUNDLE = ENV.fetch("BUNDLE_ID", "com.mitchmalone.blinkshell")
 KEY = OpenSSL::PKey.read(File.read(File.expand_path("~/.appstoreconnect/private_keys/AuthKey_#{KEY_ID}.p8")))
 
@@ -28,7 +28,13 @@ def get(path)
   uri = URI("https://api.appstoreconnect.apple.com#{path}")
   req = Net::HTTP::Get.new(uri)
   req["Authorization"] = "Bearer #{token}"
-  JSON.parse(Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(req) }.body)
+  response = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |h| h.request(req) }
+  body = JSON.parse(response.body)
+  unless response.is_a?(Net::HTTPSuccess)
+    errors = (body["errors"] || []).map { |e| "#{e["code"]}: #{e["detail"] || e["title"]}" }
+    abort "App Store Connect HTTP #{response.code}: #{errors.join("; ")}"
+  end
+  body
 end
 
 app = get("/v1/apps?filter[bundleId]=#{BUNDLE}")["data"]&.first or abort "no app for #{BUNDLE}"
