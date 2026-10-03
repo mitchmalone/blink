@@ -528,6 +528,7 @@ enum MoshError: Error, LocalizedError {
 
   func onStateEncoded(_ encodedState: Data) {
     self.sessionParams.putEncodedState(encodedState)
+    self.didSuspend = true
     print("Encoding session")
     if let sema = suspendSemaphore {
       sema.signal()

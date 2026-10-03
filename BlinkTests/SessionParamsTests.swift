@@ -31,6 +31,7 @@
 
 
 import XCTest
+@testable import Blink
 
 class SessionParamsTests: XCTestCase {
   
@@ -44,12 +45,9 @@ class SessionParamsTests: XCTestCase {
   
   func testSerialization() {
     let mcpParams = MCPParams()
-    mcpParams.rows = 10
-    mcpParams.cols = 20
-    mcpParams.boldAsBright = true
-    mcpParams.childSessionType = "test"
-    mcpParams.viewSize = CGSize(width: 10, height: 10)
-    mcpParams.layoutLockedFrame = CGRect(x: 10, y: 10, width: 10, height: 10)
+    mcpParams.childSessionType = "mosh"
+    mcpParams.initialCommand = "tmux example/main"
+    mcpParams.returnCommand = "tmux"
     
     
     let moshParams = MoshParams()
@@ -58,12 +56,10 @@ class SessionParamsTests: XCTestCase {
     mcpParams.childSessionParams = moshParams
     
     let copy = _dumpAndRestore(params: mcpParams)
-    XCTAssertEqual(mcpParams.cols, copy?.cols)
-    XCTAssertEqual(mcpParams.rows, copy?.rows)
-    XCTAssertEqual(mcpParams.boldAsBright, copy?.boldAsBright)
+    XCTAssertNotNil(copy)
     XCTAssertEqual(mcpParams.childSessionType, copy?.childSessionType)
-    XCTAssertEqual(mcpParams.viewSize, copy?.viewSize)
-    XCTAssertEqual(mcpParams.layoutLockedFrame, copy?.layoutLockedFrame)
+    XCTAssertEqual(mcpParams.returnCommand, copy?.returnCommand)
+    XCTAssertNil(copy?.initialCommand)
     XCTAssertEqual(moshParams.ip, (copy?.childSessionParams as? MoshParams)?.ip)
   }
   

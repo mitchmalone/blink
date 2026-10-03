@@ -59,6 +59,7 @@
   dispatch_queue_t _sshQueue;
   TermStream *_cmdStream;
   NSString *_currentCmdLine;
+  NSString *_commandAfterExit;
 }
 
 @dynamic sessionParams;
@@ -98,7 +99,7 @@
       _childSession = mosh;
       [_childSession executeAttachedWithArgs:@""];
       _childSession = nil;
-      if (self.sessionParams.hasEncodedState) {
+      if (mosh.didSuspend) {
         return;
       }
       if ([self _enqueueReturnCommand]) {
@@ -111,7 +112,7 @@
       _childSession = mosh;
       [_childSession executeAttachedWithArgs:@""];
       _childSession = nil;
-      if (self.sessionParams.hasEncodedState) {
+      if (mosh.didSuspend) {
         return;
       }
     }
@@ -138,6 +139,11 @@
 
 - (void)enqueueCommand:(NSString *)cmd {
   [self enqueueCommand:cmd skipHistoryRecord:NO];
+}
+
+- (void)enqueueCommandAfterExit:(NSString *)cmd {
+  // ios_waitpid joins the command before _runCommand consumes this handoff.
+  _commandAfterExit = [cmd copy];
 }
 
 - (void)enqueueCommand:(NSString *)cmd skipHistoryRecord: (BOOL) skipHistoryRecord {
@@ -190,16 +196,14 @@
   setlocale(LC_CTYPE, "UTF-8");
   
   if ([cmd isEqualToString:@"mosh"]) {
-    [self _runMoshWithArgs:cmdline];
-    if (self.sessionParams.hasEncodedState) {
+    if ([self _runMoshWithArgs:cmdline]) {
       return NO;
     }
     if ([self _enqueueReturnCommand]) {
       return NO;
     }
   } else if ([cmd isEqualToString:@"mosh1"]) {
-    [self _runMosh1WithArgs:cmdline];
-    if (self.sessionParams.hasEncodedState) {
+    if ([self _runMosh1WithArgs:cmdline]) {
       return NO;
     }
   } else if ([cmd isEqualToString:@"ssh2"]) {
@@ -248,6 +252,13 @@
     }
   }
   
+  if (_commandAfterExit) {
+    NSString *nextCommand = _commandAfterExit;
+    _commandAfterExit = nil;
+    [self enqueueCommand:nextCommand skipHistoryRecord:YES];
+    return NO;
+  }
+
   if (_device) {
     // TODO At the moment this is just a prompt instead of a readline. This needs to be fixed.
     // And bc of that, we need to check that there is a device. The MCP may be killed, but the loop here may still
@@ -343,7 +354,7 @@
   _childSession = nil;
 }
 
-- (void)_runMoshWithArgs:(NSString *)args
+- (BOOL)_runMoshWithArgs:(NSString *)args
 {
   self.sessionParams.childSessionParams = [[MoshParams alloc] init];
   self.sessionParams.childSessionType = @"mosh";
@@ -357,9 +368,10 @@
   [_childSession executeAttachedWithArgs:str];
   
   _childSession = nil;
+  return mosh.didSuspend;
 }
 
-- (void)_runMosh1WithArgs:(NSString *)args
+- (BOOL)_runMosh1WithArgs:(NSString *)args
 {
   self.sessionParams.childSessionParams = [[MoshParams alloc] init];
   self.sessionParams.childSessionType = @"mosh1";
@@ -373,6 +385,7 @@
   [_childSession executeAttachedWithArgs:str];
   
   _childSession = nil;
+  return mosh.didSuspend;
 }
 
 - (void)_runSSHWithArgs:(NSString *)args

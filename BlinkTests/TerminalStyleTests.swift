@@ -71,7 +71,7 @@ class TerminalStyleResolutionTests: XCTestCase {
   func testResolveMissingThemeFallsBack() {
     let style = TerminalStyle(
       id: UUID(), name: "Broken", themeName: "NonexistentTheme123",
-      fontName: "Source Code Pro", fontSize: 14, externalDisplayFontSize: 24,
+      fontName: "Source Code Pro", fontSize: 14,
       cursorBlink: false, boldMode: .auto, boldAsBright: false
     )
     let r = style.resolved()
@@ -83,7 +83,7 @@ class TerminalStyleResolutionTests: XCTestCase {
   func testResolveMissingFontFallsBack() {
     let style = TerminalStyle(
       id: UUID(), name: "Broken", themeName: "Default",
-      fontName: "TotallyFakeFont999", fontSize: 14, externalDisplayFontSize: 24,
+      fontName: "TotallyFakeFont999", fontSize: 14,
       cursorBlink: false, boldMode: .auto, boldAsBright: false
     )
     let r = style.resolved()

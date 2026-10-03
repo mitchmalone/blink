@@ -462,8 +462,6 @@ enum TmuxAttach {
     case .ssh:
       cmd = "ssh -t \(target.host) -- \"\(remote)\""
     }
-    session.cmdQueue.async {
-      session.enqueueCommand(cmd, skipHistoryRecord: true)
-    }
+    session.enqueueCommand(afterExit: cmd)
   }
 }

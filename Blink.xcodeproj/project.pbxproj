@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DDF030010000000000000001 /* SessionLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDF030010000000000000002 /* SessionLifecycleTests.swift */; };
 		0716B5721CFFAB9300268B5B /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0716B52A1CFFAB9300268B5B /* AppDelegate.m */; };
 		0716B5741CFFAB9300268B5B /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0716B52C1CFFAB9300268B5B /* LaunchScreen.storyboard */; };
 		0732F04D1D062B9A00AB5438 /* locales.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 0732F04A1D062B9A00AB5438 /* locales.bundle */; };
@@ -358,7 +359,6 @@
 		D264D2B428F84592002B1B14 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = D264D2B128F84592002B1B14 /* Models.swift */; };
 		D264D2B628F84724002B1B14 /* whatsnew.m in Sources */ = {isa = PBXBuildFile; fileRef = D264D2B528F84724002B1B14 /* whatsnew.m */; };
 		D265FBC52317E5090017EAC4 /* SessionParamsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D265FBC42317E5090017EAC4 /* SessionParamsTests.swift */; };
-		D265FBC62317E54C0017EAC4 /* SessionParams.swift in Sources */ = {isa = PBXBuildFile; fileRef = D248E67D22DE14100057FE67 /* SessionParams.swift */; };
 		D265FBC9231905AC0017EAC4 /* NSCoder+CodingKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = D265FBC8231905AC0017EAC4 /* NSCoder+CodingKey.swift */; };
 		D266A9DA27295ECE00C85EED /* blink-uio.min.js in Resources */ = {isa = PBXBuildFile; fileRef = D266A9D627295ECE00C85EED /* blink-uio.min.js */; };
 		D266A9DC272A77A100C85EED /* code.swift in Sources */ = {isa = PBXBuildFile; fileRef = D266A9DB272A77A100C85EED /* code.swift */; };
@@ -759,6 +759,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		DDF030010000000000000002 /* SessionLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionLifecycleTests.swift; sourceTree = "<group>"; };
 		0716B5291CFFAB9300268B5B /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		0716B52A1CFFAB9300268B5B /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		0716B52D1CFFAB9300268B5B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -2236,6 +2237,7 @@
 				D265FBBE2317DD3C0017EAC4 /* Info.plist */,
 				BD8BBF0825F819970084705F /* SEKeyTests.swift */,
 				D265FBC42317E5090017EAC4 /* SessionParamsTests.swift */,
+				DDF030010000000000000002 /* SessionLifecycleTests.swift */,
 				BD74A7C12905BD5800ED01CF /* WhatsNewModelTests.swift */,
 				BD33F7862AAA7C4300CD16EE /* MoshBootstrapTests.swift */,
 				BD55D69B2F7D744B00EE80EA /* TerminalStyleTests.swift */,
@@ -3445,13 +3447,13 @@
 				D243F17E2602438D00097A2F /* XCTestCase.swift in Sources */,
 				D2CB059A273BBB0800394A4F /* SEKey.swift in Sources */,
 				D265FBC52317E5090017EAC4 /* SessionParamsTests.swift in Sources */,
+				DDF030010000000000000001 /* SessionLifecycleTests.swift in Sources */,
 				BD8BBF5525F829B00084705F /* SEKeyTests.swift in Sources */,
 				BD33F7872AAA7C4300CD16EE /* MoshBootstrapTests.swift in Sources */,
 				BD9EA216271F83B400874007 /* BlinkLoggingTests.swift in Sources */,
 				BD19DB412B056E9C003A4367 /* SSHCommandTest.swift in Sources */,
 				D20CBA57236031D700D93301 /* CompleteUtilsTests.swift in Sources */,
 				D20CBA5B2360327900D93301 /* CompleteUtils.swift in Sources */,
-				D265FBC62317E54C0017EAC4 /* SessionParams.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -191,6 +191,7 @@ void *run_session(void *sessionData)
 
 - (void)executeWithArgs:(NSString *)argstr
 {
+  self.didSuspend = NO;
   _attached = NO;
   _args = argstr;
 
@@ -203,6 +204,7 @@ void *run_session(void *sessionData)
 
 - (void)executeAttachedWithArgs:(NSString *)argstr
 {
+  self.didSuspend = NO;
   _attached = YES;
   _args = argstr;
 
