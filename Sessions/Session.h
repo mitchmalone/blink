@@ -65,6 +65,9 @@ typedef id<BKSessionParamsSnapshotting, NSSecureCoding> BKSessionParams;
 @property (strong) TermStream *stream;
 @property (strong) TermDevice *device;
 @property (readonly) pthread_t tid;
+// Set by the snapshot callback, before waking suspend(). The payload can move
+// the snapshot out of sessionParams before the parent checks how we finished.
+@property (atomic) BOOL didSuspend;
 
 @property (weak) id<SessionDelegate> delegate;
 

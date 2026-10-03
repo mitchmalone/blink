@@ -605,6 +605,7 @@ void __state_callback(const void *context, const void *buffer, size_t size) {
 - (void)onStateEncoded: (NSData *) encodedState
 {
   [self.sessionParams putEncodedState:encodedState];
+  self.didSuspend = YES;
   if (_sema) {
     dispatch_semaphore_signal(_sema);
   }

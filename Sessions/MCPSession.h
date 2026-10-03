@@ -50,6 +50,9 @@
 
 - (void)enqueueCommand:(NSString *)cmd;
 - (void)enqueueCommand:(NSString *)cmd skipHistoryRecord: (BOOL) skipHistoryRecord;
+// Called by a running command to hand off after its streams have been closed,
+// without opening a shell prompt or writing the command into its own stdin.
+- (void)enqueueCommandAfterExit:(NSString *)cmd;
 - (bool)isRunningCmd;
 
 - (void)updateAllowedPaths;
